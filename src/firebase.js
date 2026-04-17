@@ -12,13 +12,13 @@ let firebaseAuth = null;
 let firebaseAnalytics = null;
 
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyD6SW1AxgJfO8u1tO4iRqLLq8gguR2gExk",
-  authDomain: "stadiumflow-ai-34106.firebaseapp.com",
-  projectId: "stadiumflow-ai-34106",
-  storageBucket: "stadiumflow-ai-34106.firebasestorage.app",
-  messagingSenderId: "634059504224",
-  appId: "1:634059504224:web:281da3421fa98585ca2105",
-  measurementId: "G-W7VKPGGD0R"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 /**

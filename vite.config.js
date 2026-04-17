@@ -2,7 +2,10 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   build: {
-    minify: false,
+    minify: 'terser',
+    terserOptions: {
+      compress: { drop_console: false },
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -15,6 +18,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    globals: true
+    globals: true,
+    setupFiles: ['./src/test-setup.js'],
   }
 });

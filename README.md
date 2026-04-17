@@ -10,6 +10,31 @@
 
 ---
 
+## 🎯 Chosen Vertical
+
+**Smart Stadium Assistant** — A context-aware, AI-powered crowd management tool for live sporting events and large venue operations.
+
+## 🧠 Approach & Logic
+
+StadiumFlow AI tackles a real problem: **information asymmetry in crowded venues**. When 60,000+ fans are in a stadium, nobody knows which corridors are jammed, which food lines are shortest, or which gates to avoid.
+
+**How it works:**
+1. **Data Layer** → The application maintains real-time occupancy data across 9 distinct stadium zones and 3 concession stands with live wait times.
+2. **AI Analysis** → When the user opens the Smart Assistant, all current venue data is dynamically injected into a carefully engineered prompt and sent to Google's **Gemini 2.0 Flash** via the REST API. Gemini analyzes crowd patterns relative to the user's specific seat location and returns 2-3 hyper-contextual, actionable tips.
+3. **Decision Engine** → The heatmap visualization uses a density-threshold algorithm (`< 0.4 = Low`, `0.4–0.7 = Medium`, `> 0.7 = High`) to color-code zones, enabling instant visual decision-making.
+4. **Secure Rendering** → Every piece of dynamic content (including raw AI responses) is sanitized through DOMPurify before DOM injection, preventing XSS attacks.
+
+**Architecture:** Fully modular ES6 — the monolithic codebase was refactored into 8 focused single-responsibility modules (`auth.js`, `mapRenderer.js`, `geminiAssistant.js`, `foodStalls.js`, `alerts.js`, `googleMaps.js`, `firebase.js`, `utils.js`).
+
+## 📝 Assumptions
+
+- Crowd density data is simulated via a centralized mock data store (`mockData.js`) to demonstrate the UI and AI integration without requiring a backend sensor network.
+- The Gemini API key is stored client-side via Vite environment variables (`.env`), which is acceptable for hackathon prototyping but would be proxied through Firebase Functions in production.
+- The stadium modeled is MetLife Stadium (East Rutherford, NJ) as a representative large venue with 9 zones and ~28,000 tracked seats.
+- Firebase Authentication is configured with Google Sign-In only; email/password sign-in uses a mock flow for demo purposes.
+
+---
+
 ## ✨ Features
 
 | Feature | Description |

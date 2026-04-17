@@ -1,12 +1,30 @@
+/**
+ * @fileoverview Gemini AI Smart Assistant module.
+ * Analyzes live stadium data and generates contextual recommendations
+ * via the Google Gemini 2.0 Flash REST API.
+ * @module geminiAssistant
+ */
+
 import { ZONES, CONCESSION_STALLS, SEAT_DATA } from './mockData.js';
+import { DOM_IDS, GEMINI_CACHE_KEY, GEMINI_API_URL } from './constants.js';
 
-// Use the REST API directly instead of the npm package 
-// so there are zero dependency issues.
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-
+/**
+ * Generates smart insights by sending live venue data to the Gemini API.
+ * Caches the response in sessionStorage to avoid redundant API calls
+ * when the user re-opens the panel without new data.
+ *
+ * @returns {Promise<void>}
+ */
 export async function generateSmartInsights() {
-  const container = document.getElementById('assistant-content');
-  if (!container) return;
+  const container = document.getElementById(DOM_IDS.ASSISTANT_CONTENT);
+  if (!container) { return; }
+
+  // Check sessionStorage cache first
+  const cached = sessionStorage.getItem(GEMINI_CACHE_KEY);
+  if (cached) {
+    container.innerHTML = window.DOMPurify.sanitize(cached);
+    return;
+  }
 
   container.innerHTML = `
     <div class="assistant-loading">
@@ -21,7 +39,6 @@ export async function generateSmartInsights() {
       throw new Error('Missing Gemini API Key. Please add it to your .env file as VITE_GEMINI_API_KEY.');
     }
 
-    // Build live data context from the app's actual state
     const zoneLines = ZONES.map(
       z => `- ${z.name} (${z.section}): ${z.current}/${z.capacity} — ${Math.round(z.density * 100)}% full`
     ).join('\n');
@@ -59,25 +76,27 @@ User's Seat: Section ${SEAT_DATA.section}, Row ${SEAT_DATA.row}`;
     const data = await response.json();
     const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No insights available.';
 
-    // Lightweight markdown → HTML conversion
     let html = rawText
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')   // bold
-      .replace(/^\* (.+)$/gm, '<li>$1</li>')              // unordered list items (* )
-      .replace(/^- (.+)$/gm, '<li>$1</li>');              // unordered list items (- )
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^\* (.+)$/gm, '<li>$1</li>')
+      .replace(/^- (.+)$/gm, '<li>$1</li>');
 
     if (html.includes('<li>')) {
-      html = '<ul class="assistant-tips">' + html.replace(/(<li>)/g, '$1') + '</ul>';
-      // Clean up any stray text outside <li> tags inside the <ul>
+      html = '<ul class="assistant-tips">' + html + '</ul>';
       html = html.replace(/<ul class="assistant-tips">([\s\S]*?)<\/ul>/g, (match, inner) => {
         const cleaned = inner.replace(/^(?!<li>)[^<\n]+$/gm, '').trim();
         return `<ul class="assistant-tips">${cleaned}</ul>`;
       });
     } else {
-      // If no bullets, wrap in paragraphs
       html = rawText.split('\n').filter(l => l.trim()).map(l => `<p>${l}</p>`).join('');
     }
 
-    container.innerHTML = window.DOMPurify.sanitize(html);
+    const sanitizedHtml = window.DOMPurify.sanitize(html);
+
+    // Cache the response in sessionStorage
+    sessionStorage.setItem(GEMINI_CACHE_KEY, sanitizedHtml);
+
+    container.innerHTML = sanitizedHtml;
 
   } catch (error) {
     console.error('Gemini Assistant Error:', error);
@@ -91,18 +110,33 @@ User's Seat: Section ${SEAT_DATA.section}, Row ${SEAT_DATA.row}`;
   }
 }
 
+/**
+ * Toggles the visibility of the AI assistant sliding panel.
+ * Automatically triggers insight generation on the first open.
+ *
+ * @returns {void}
+ */
 export function toggleAssistantPanel() {
-  const panel = document.getElementById('assistant-panel');
-  if (panel) {
-    if (panel.classList.contains('active')) {
-      panel.classList.remove('active');
-    } else {
-      panel.classList.add('active');
-      // Automatically generate insights on the first open if empty
-      const content = document.getElementById('assistant-content');
-      if (content && content.innerHTML.trim() === '') {
-        generateSmartInsights();
-      }
+  const panel = document.getElementById(DOM_IDS.ASSISTANT_PANEL);
+  if (!panel) { return; }
+
+  if (panel.classList.contains('active')) {
+    panel.classList.remove('active');
+  } else {
+    panel.classList.add('active');
+    const content = document.getElementById(DOM_IDS.ASSISTANT_CONTENT);
+    if (content && content.innerHTML.trim() === '') {
+      generateSmartInsights();
     }
   }
+}
+
+/**
+ * Forces a fresh insight generation by clearing the session cache first.
+ *
+ * @returns {Promise<void>}
+ */
+export async function refreshInsights() {
+  sessionStorage.removeItem(GEMINI_CACHE_KEY);
+  await generateSmartInsights();
 }

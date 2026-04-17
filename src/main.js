@@ -1,30 +1,44 @@
+/**
+ * @fileoverview Application entry point. Orchestrates authentication,
+ * tab navigation, and module initialization.
+ * @module main
+ */
+
 import './style.css';
 import { initAuthFlow } from './auth.js';
 import { renderMap, hideZoneDetail, toggleMapRestrooms } from './mapRenderer.js';
 import { renderStalls } from './foodStalls.js';
 import { renderAlerts, renderSeat } from './alerts.js';
 import { updateTime } from './utils.js';
-import { toggleAssistantPanel, generateSmartInsights } from './geminiAssistant.js';
+import { toggleAssistantPanel, refreshInsights } from './geminiAssistant.js';
 import { initGoogleMap } from './googleMaps.js';
+import { DOM_IDS } from './constants.js';
 
 // ==========================================
 // APP STATE & INIT
 // ==========================================
 
+/** @type {string} Currently active navigation tab */
 let activeTab = 'map';
 
+/**
+ * Initializes the main application after successful authentication.
+ * Binds all global event listeners and renders initial tab content.
+ *
+ * @returns {void}
+ */
 function initApp() {
   // Bind tab switching
   document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', () => switchTab(item.getAttribute('data-tab')));
   });
 
-  // Bind globals
-  document.getElementById('zone-detail-close')?.addEventListener('click', hideZoneDetail);
-  document.getElementById('find-rr-btn')?.addEventListener('click', toggleMapRestrooms);
-  document.getElementById('ai-fab')?.addEventListener('click', toggleAssistantPanel);
-  document.getElementById('assistant-close')?.addEventListener('click', toggleAssistantPanel);
-  document.getElementById('refresh-insights-btn')?.addEventListener('click', generateSmartInsights);
+  // Bind global controls
+  document.getElementById(DOM_IDS.ZONE_DETAIL_CLOSE)?.addEventListener('click', hideZoneDetail);
+  document.getElementById(DOM_IDS.FIND_RR_BTN)?.addEventListener('click', toggleMapRestrooms);
+  document.getElementById(DOM_IDS.AI_FAB)?.addEventListener('click', toggleAssistantPanel);
+  document.getElementById(DOM_IDS.ASSISTANT_CLOSE)?.addEventListener('click', toggleAssistantPanel);
+  document.getElementById(DOM_IDS.REFRESH_INSIGHTS_BTN)?.addEventListener('click', refreshInsights);
 
   // Time loop
   updateTime();
@@ -38,8 +52,14 @@ function initApp() {
   initGoogleMap();
 }
 
+/**
+ * Switches the active tab and updates ARIA state across all navigation items.
+ *
+ * @param {string} tabName - The data-tab identifier to switch to.
+ * @returns {void}
+ */
 function switchTab(tabName) {
-  if (tabName === activeTab) return;
+  if (!tabName || tabName === activeTab) { return; }
   activeTab = tabName;
 
   document.querySelectorAll('.nav-item').forEach(item => {
@@ -61,7 +81,7 @@ function switchTab(tabName) {
 // 1. Kick off auth listener
 initAuthFlow();
 
-// 2. Wait for auth success to initialize main data 
+// 2. Wait for auth success to initialize main data
 document.addEventListener('authSuccess', () => {
   initApp();
 });
